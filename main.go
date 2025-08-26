@@ -7,11 +7,26 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/laowai9189/TestCopilot/database"
 	"github.com/laowai9189/TestCopilot/handlers"
 	"github.com/laowai9189/TestCopilot/models"
 )
 
 func main() {
+	// Initialize database
+	fmt.Println("Initializing database connection...")
+	err := database.Initialize()
+	if err != nil {
+		log.Fatal("Failed to initialize database:", err)
+	}
+	defer database.Close()
+
+	// Create users table
+	err = database.CreateUsersTable()
+	if err != nil {
+		log.Fatal("Failed to create users table:", err)
+	}
+
 	// Create router
 	r := mux.NewRouter()
 
@@ -32,9 +47,10 @@ func main() {
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		response := models.Response{
 			Status:  "success",
-			Message: "Welcome to TestCopilot Backend API",
+			Message: "Welcome to TestCopilot Backend API with MySQL",
 			Data: map[string]interface{}{
 				"version": "1.0.0",
+				"database": "MySQL",
 				"endpoints": []string{
 					"GET /api/v1/health",
 					"GET /api/v1/users",

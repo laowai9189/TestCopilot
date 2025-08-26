@@ -1,14 +1,15 @@
 # TestCopilot
 
-A simple Golang backend API project built with [gorilla/mux](https://github.com/gorilla/mux) framework.
+A Golang backend API project built with [gorilla/mux](https://github.com/gorilla/mux) framework and MySQL database integration.
 
 ## Features
 
 - RESTful API with CRUD operations for users
 - JSON responses with standardized format
 - Health check endpoint
-- In-memory data storage for demonstration
-- Clean project structure with separated handlers and models
+- MySQL database integration with mock implementation for demonstration
+- Clean project structure with separated handlers, models, and repository patterns
+- Randomly generated MySQL configuration for development
 
 ## Project Structure
 
@@ -17,10 +18,16 @@ A simple Golang backend API project built with [gorilla/mux](https://github.com/
 ├── main.go           # Main application entry point
 ├── go.mod           # Go module dependencies
 ├── go.sum           # Go module checksums
+├── config/          # Configuration packages
+│   └── database.go  # Database configuration with random generation
+├── database/        # Database connection and management
+│   └── connection.go # MySQL connection handling
 ├── handlers/        # HTTP request handlers
 │   └── user.go      # User-related handlers
 ├── models/          # Data models
 │   └── user.go      # User model and response structures
+├── repository/      # Data access layer
+│   └── user_repository.go # User database operations
 └── README.md        # This file
 ```
 
@@ -28,6 +35,17 @@ A simple Golang backend API project built with [gorilla/mux](https://github.com/
 
 - Go 1.24+ installed on your system
 - Git (for cloning the repository)
+- MySQL database (for production use)
+
+## Database Configuration
+
+The application automatically generates random MySQL connection details for demonstration:
+- Random IP address (192.168.x.x range)
+- Random port (3000-9999)
+- Random username and password
+- Database name: `testcopilot_db`
+
+**Note**: This implementation includes a mock database layer for demonstration purposes. In production, you would connect to a real MySQL database by updating the connection logic in `database/connection.go`.
 
 ## Installation & Setup
 
@@ -57,7 +75,7 @@ Or run directly with Go:
 go run main.go
 ```
 
-The server will start on port 8080 by default.
+The server will start on port 8080 by default and display the randomly generated database configuration.
 
 ## API Endpoints
 
@@ -143,12 +161,26 @@ All API responses follow a standard JSON format:
 ### Adding New Endpoints
 
 1. Define new models in `models/` directory
-2. Create handlers in `handlers/` directory
-3. Register routes in `main.go`
+2. Create repository methods in `repository/` directory
+3. Create handlers in `handlers/` directory
+4. Register routes in `main.go`
+
+### Database Integration
+
+The project uses a repository pattern for database operations:
+- `config/database.go` - Database configuration management
+- `database/connection.go` - Connection handling and initialization
+- `repository/user_repository.go` - User data access operations
+
+To integrate with a real MySQL database:
+1. Update the connection logic in `database/connection.go`
+2. Replace mock operations in `repository/user_repository.go` with actual SQL queries
+3. Configure your MySQL database connection details
 
 ### Dependencies
 
 - [gorilla/mux](https://github.com/gorilla/mux) - HTTP router and URL matcher
+- [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql) - MySQL driver for Go
 
 ## License
 

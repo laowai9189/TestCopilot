@@ -8,19 +8,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/laowai9189/TestCopilot/models"
+	"github.com/laowai9189/TestCopilot/repository"
 )
 
-// In-memory storage for demonstration
-var users []models.User
-var nextID int = 1
+// userRepo is the user repository instance
+var userRepo *repository.UserRepository
 
 func init() {
-	// Initialize with some sample data
-	users = []models.User{
-		{ID: 1, Name: "John Doe", Email: "john@example.com"},
-		{ID: 2, Name: "Jane Smith", Email: "jane@example.com"},
-	}
-	nextID = 3
+	// Initialize the user repository
+	userRepo = repository.NewUserRepository()
 }
 
 // HealthCheck handles health check requests
@@ -40,6 +36,18 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 
 // GetUsers returns all users
 func GetUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := userRepo.GetAll()
+	if err != nil {
+		response := models.Response{
+			Status:  "error",
+			Message: "Failed to retrieve users",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
 	response := models.Response{
 		Status:  "success",
 		Message: "Users retrieved successfully",
@@ -59,25 +67,24 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, user := range users {
-		if user.ID == id {
-			response := models.Response{
-				Status:  "success",
-				Message: "User found",
-				Data:    user,
-			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
-			return
+	user, err := userRepo.GetByID(id)
+	if err != nil {
+		response := models.Response{
+			Status:  "error",
+			Message: "User not found",
 		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
 	response := models.Response{
-		Status:  "error",
-		Message: "User not found",
+		Status:  "success",
+		Message: "User found",
+		Data:    user,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -96,9 +103,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.ID = nextID
-	nextID++
-	users = append(users, user)
+	err = userRepo.Create(&user)
+	if err != nil {
+		response := models.Response{
+			Status:  "error",
+			Message: "Failed to create user",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 
 	response := models.Response{
 		Status:  "success",
@@ -132,27 +147,24 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i, user := range users {
-		if user.ID == id {
-			updatedUser.ID = id
-			users[i] = updatedUser
-			response := models.Response{
-				Status:  "success",
-				Message: "User updated successfully",
-				Data:    updatedUser,
-			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
-			return
+	err = userRepo.Update(id, &updatedUser)
+	if err != nil {
+		response := models.Response{
+			Status:  "error",
+			Message: "User not found",
 		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
 	response := models.Response{
-		Status:  "error",
-		Message: "User not found",
+		Status:  "success",
+		Message: "User updated successfully",
+		Data:    updatedUser,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -165,24 +177,22 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i, user := range users {
-		if user.ID == id {
-			users = append(users[:i], users[i+1:]...)
-			response := models.Response{
-				Status:  "success",
-				Message: "User deleted successfully",
-			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
-			return
+	err = userRepo.Delete(id)
+	if err != nil {
+		response := models.Response{
+			Status:  "error",
+			Message: "User not found",
 		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
 	response := models.Response{
-		Status:  "error",
-		Message: "User not found",
+		Status:  "success",
+		Message: "User deleted successfully",
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(w).Encode(response)
 }
